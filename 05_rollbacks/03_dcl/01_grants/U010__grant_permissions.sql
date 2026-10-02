@@ -1,0 +1,1 @@
+REVOKE ALL ON SCHEMA medical_consultation FROM medical_consultation_reader, medical_consultation_writer;
