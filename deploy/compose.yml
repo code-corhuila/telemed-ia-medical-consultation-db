@@ -12,7 +12,7 @@ services:
       FLYWAY_URL: jdbc:postgresql://postgres:5432/${PG_DATABASE:-telemed_ia}
       FLYWAY_USER: ${MEDICAL_CONSULTATION_APP_USER:-medical_consultation_app}
       FLYWAY_PASSWORD: ${MEDICAL_CONSULTATION_APP_PASSWORD:?required}
-    command: ["-configFiles=flyway.toml", "migrate"]
+    command: ["-configFiles=flyway.conf", "migrate"]
     networks:
       - platform
 
