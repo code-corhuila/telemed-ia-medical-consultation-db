@@ -1,0 +1,12 @@
+[flyway]
+locations = ["filesystem:01_ddl", "filesystem:02_dml", "filesystem:03_dcl", "filesystem:04_tcl"]
+validateMigrationNaming = true
+cleanDisabled = true
+schemas = ["medical_consultation"]
+defaultSchema = "medical_consultation"
+table = "flyway_history_medical_consultation"
+baselineOnMigrate = true
+baselineVersion = "0"
+
+[flyway.postgresql.transactional]
+lock = false
