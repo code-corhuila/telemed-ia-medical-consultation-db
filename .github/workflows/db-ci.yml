@@ -66,16 +66,15 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client
+          # 1. Revoke grants so roles have no dependencies
           PGPASSWORD=postgres psql -h localhost -U postgres -d telemed_ia -v ON_ERROR_STOP=1 \
-            -f 05_rollbacks/01_ddl/03_tables/U004__create_post_summaries.sql
-          PGPASSWORD=postgres psql -h localhost -U postgres -d telemed_ia -v ON_ERROR_STOP=1 \
-            -f 05_rollbacks/01_ddl/03_tables/U003__create_attention_summaries.sql
-          PGPASSWORD=postgres psql -h localhost -U postgres -d telemed_ia -v ON_ERROR_STOP=1 \
-            -f 05_rollbacks/01_ddl/03_tables/U002__create_consultations.sql
-          PGPASSWORD=postgres psql -h localhost -U postgres -d telemed_ia -v ON_ERROR_STOP=1 \
-            -f 05_rollbacks/03_dcl/00_roles/U009__create_roles.sql
+            -f 05_rollbacks/03_dcl/01_grants/U010__grant_permissions.sql
+          # 2. Drop the schema CASCADE (removes all tables, incl. flyway_history)
           PGPASSWORD=postgres psql -h localhost -U postgres -d telemed_ia -v ON_ERROR_STOP=1 \
             -f 05_rollbacks/01_ddl/01_schemas/U001__create_schema_medical_consultation.sql
+          # 3. Drop the roles
+          PGPASSWORD=postgres psql -h localhost -U postgres -d telemed_ia -v ON_ERROR_STOP=1 \
+            -f 05_rollbacks/03_dcl/00_roles/U009__create_roles.sql
 
       - name: Verify schema no longer exists
         run: |
@@ -83,5 +82,11 @@ jobs:
             "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = 'medical_consultation'")
           if [ "$EXISTS" != "0" ]; then
             echo "Schema still exists after rollback"
+            exit 1
+          fi
+          ROLES=$(PGPASSWORD=postgres psql -h localhost -U postgres -d telemed_ia -tAc \
+            "SELECT COUNT(*) FROM pg_roles WHERE rolname IN ('medical_consultation_reader','medical_consultation_writer')")
+          if [ "$ROLES" != "0" ]; then
+            echo "Roles still exist after rollback"
             exit 1
           fi
