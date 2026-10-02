@@ -1,0 +1,5 @@
+DROP INDEX IF EXISTS medical_consultation.idx_consultations_patient;
+DROP INDEX IF EXISTS medical_consultation.idx_consultations_professional;
+DROP INDEX IF EXISTS medical_consultation.idx_consultations_status;
+DROP INDEX IF EXISTS medical_consultation.idx_attention_summaries_consultation;
+DROP INDEX IF EXISTS medical_consultation.idx_post_summaries_patient;
