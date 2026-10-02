@@ -1,0 +1,22 @@
+name: telemed-ia-medical-consultation-db
+
+services:
+  medical-consultation-db-migrate:
+    image: flyway/flyway:10.20.1
+    container_name: medical-consultation-db-migrate
+    profiles: [tooling]
+    volumes:
+      - ..:/workspace:ro
+    working_dir: /workspace
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/${PG_DATABASE:-telemed_ia}
+      FLYWAY_USER: ${MEDICAL_CONSULTATION_APP_USER:-medical_consultation_app}
+      FLYWAY_PASSWORD: ${MEDICAL_CONSULTATION_APP_PASSWORD:?required}
+    command: ["-configFiles=flyway.conf", "migrate"]
+    networks:
+      - platform
+
+networks:
+  platform:
+    external: true
+    name: platform
