@@ -52,14 +52,14 @@ jobs:
           docker run --rm --network host \
             -v "$PWD:/workspace" -w /workspace \
             -e FLYWAY_URL -e FLYWAY_USER -e FLYWAY_PASSWORD \
-            flyway/flyway:10.20.1 -configFiles=flyway.toml migrate
+            flyway/flyway:10.20.1 -configFiles=flyway.conf migrate
 
       - name: Second migrate applies zero changes
         run: |
           docker run --rm --network host \
             -v "$PWD:/workspace" -w /workspace \
             -e FLYWAY_URL -e FLYWAY_USER -e FLYWAY_PASSWORD \
-            flyway/flyway:10.20.1 -configFiles=flyway.toml migrate | tee /tmp/out.txt
+            flyway/flyway:10.20.1 -configFiles=flyway.conf migrate | tee /tmp/out.txt
           grep -q "No migration necessary" /tmp/out.txt
 
       - name: Roll back the schema
