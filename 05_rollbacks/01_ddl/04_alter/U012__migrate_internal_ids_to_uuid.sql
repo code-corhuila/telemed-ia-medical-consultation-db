@@ -1,0 +1,15 @@
+-- U012__migrate_internal_ids_to_uuid.sql
+-- Rollback de V012.
+--
+-- IMPORTANTE: la reversion de tipo uuid -> bigint no es simetrica.
+-- uuid no se puede convertir a bigint sin perder informacion.
+-- Este script no revierte tipos.
+--
+-- Para reconstruir el esquema original en dev:
+--   psql -c "DROP SCHEMA medical_consultation CASCADE;"
+-- y volver a aplicar todas las V desde V001.
+--
+-- flyway.cleanDisabled=true impide usar flyway clean.
+
+-- Sin DROP INDEX: V012 no anade indices nuevos.
+-- Las FKs internas se recrean en V012; no se revierten aqui.
