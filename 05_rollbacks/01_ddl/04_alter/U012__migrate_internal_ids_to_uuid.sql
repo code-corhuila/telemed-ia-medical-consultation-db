@@ -1,15 +1,17 @@
 -- U012__migrate_internal_ids_to_uuid.sql
--- Rollback de V012.
+-- Reversion NO implementada.
 --
--- IMPORTANTE: la reversion de tipo uuid -> bigint no es simetrica.
--- uuid no se puede convertir a bigint sin perder informacion.
--- Este script no revierte tipos.
+-- La reversion determinista de md5(x)::uuid a bigint requiere:
+--   1. Convertir el UUID hex a bytes.
+--   2. Reconstruir el valor original de md5 (imposible sin la entrada).
+--   3. O restaurar los IDs desde un backup (no existe).
 --
--- Para reconstruir el esquema original en dev:
---   psql -c "DROP SCHEMA medical_consultation CASCADE;"
--- y volver a aplicar todas las V desde V001.
+-- En un corte de desarrollo, la reversion limpia es:
+--   DROP SCHEMA medical_consultation CASCADE;
+--   CREATE SCHEMA medical_consultation;
+--   reaplicar V001..V012.
 --
--- flyway.cleanDisabled=true impide usar flyway clean.
+-- flyway.cleanDisabled=true impide flyway clean; el drop manual es la
+-- unica via soportada.
 
--- Sin DROP INDEX: V012 no anade indices nuevos.
--- Las FKs internas se recrean en V012; no se revierten aqui.
+-- (Sin sentencias SQL a proposito.)
