@@ -30,7 +30,7 @@ migration executor.
 04_tcl/          transactions
 05_rollbacks/    reversals (U<n>__*.sql)
 deploy/          compose.yml with only the Flyway executor
-flyway.toml      Flyway configuration
+flyway.conf      Flyway configuration
 ```
 
 ## How to apply migrations
@@ -49,7 +49,26 @@ docker compose --env-file env/dev.env --profile tooling run --rm medical-consult
 - Every V has a U in `05_rollbacks/` with the same number.
 - `flyway_history_medical_consultation` is the control table for this domain.
 
+## Resetting the schema (dev / CI only)
+
+The schema is a single isolated `medical_consultation` schema inside the shared platform PostgreSQL. It is safe to drop and recreate in dev/CI.
+
+`flyway.cleanDisabled=true` prevents `flyway clean`, so the reset is done manually:
+
+```bash
+# From the platform PostgreSQL (telemed-ia-postgres):
+psql -U postgres -d telemed_ia -c \
+  "DROP SCHEMA IF EXISTS medical_consultation CASCADE;"
+
+# Re-apply V001..V014:
+docker compose --env-file env/dev.env --profile tooling \
+  run --rm medical-consultation-db-migrate
+```
+
+Any V012 checksum mismatch on an existing schema means the schema was migrated before the fix; drop and re-apply.
+
 ## Cross-domain identifiers (UUID)
+
 
 Since `V011__migrate_cross_domain_ids_to_uuid.sql`, all cross-domain
 identifiers in `medical_consultation` are `uuid`:
@@ -80,8 +99,11 @@ so the seed remains reproducible across environments:
 `appointment-scheduling-db`, so the seed stays consistent across
 repositories.
 
-Rollback: `U011` only documents that the type reversal is not
-symmetric. See the comment inside the script.
+Rollback: `U011` and `U012` only document that the type reversal is
+not symmetric. `V012` uses `md5(<col>::text)::uuid` so the parent-child
+relations between `consultations`, `attention_summaries` and
+`post_summaries` are preserved (the previous `gen_random_uuid()` per
+column broke them). See the comment inside the script.
 
 ## Related documentation
 
