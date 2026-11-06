@@ -1,0 +1,17 @@
+-- U012__migrate_internal_ids_to_uuid.sql
+-- Reversion NO implementada.
+--
+-- La reversion determinista de md5(x)::uuid a bigint requiere:
+--   1. Convertir el UUID hex a bytes.
+--   2. Reconstruir el valor original de md5 (imposible sin la entrada).
+--   3. O restaurar los IDs desde un backup (no existe).
+--
+-- En un corte de desarrollo, la reversion limpia es:
+--   DROP SCHEMA medical_consultation CASCADE;
+--   CREATE SCHEMA medical_consultation;
+--   reaplicar V001..V012.
+--
+-- flyway.cleanDisabled=true impide flyway clean; el drop manual es la
+-- unica via soportada.
+
+-- (Sin sentencias SQL a proposito.)
