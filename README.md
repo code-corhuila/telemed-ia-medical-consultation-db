@@ -30,7 +30,7 @@ migration executor.
 04_tcl/          transactions
 05_rollbacks/    reversals (U<n>__*.sql)
 deploy/          compose.yml with only the Flyway executor
-flyway.toml      Flyway configuration
+flyway.conf      Flyway configuration
 ```
 
 ## How to apply migrations
@@ -48,6 +48,62 @@ docker compose --env-file env/dev.env --profile tooling run --rm medical-consult
 - A migration already applied is never edited.
 - Every V has a U in `05_rollbacks/` with the same number.
 - `flyway_history_medical_consultation` is the control table for this domain.
+
+## Resetting the schema (dev / CI only)
+
+The schema is a single isolated `medical_consultation` schema inside the shared platform PostgreSQL. It is safe to drop and recreate in dev/CI.
+
+`flyway.cleanDisabled=true` prevents `flyway clean`, so the reset is done manually:
+
+```bash
+# From the platform PostgreSQL (telemed-ia-postgres):
+psql -U postgres -d telemed_ia -c \
+  "DROP SCHEMA IF EXISTS medical_consultation CASCADE;"
+
+# Re-apply V001..V014:
+docker compose --env-file env/dev.env --profile tooling \
+  run --rm medical-consultation-db-migrate
+```
+
+Any V012 checksum mismatch on an existing schema means the schema was migrated before the fix; drop and re-apply.
+
+## Cross-domain identifiers (UUID)
+
+
+Since `V011__migrate_cross_domain_ids_to_uuid.sql`, all cross-domain
+identifiers in `medical_consultation` are `uuid`:
+
+- `consultations.appointment_id`, `patient_id`, `professional_id`.
+- `post_summaries.appointment_id`, `patient_id`,
+  `preconsultation_summary_id`.
+
+Internal identifiers remain `bigserial` / `bigint`:
+
+- `consultations.id`, `post_summaries.id`, `attention_summaries.id`.
+- `post_summaries.consultation_id`, `attention_summary_id`.
+
+Rationale: alignment with `identity-and-access` (the JWT `sub` is a
+UUID), `intelligent-agent-db`, `appointment-scheduling-db` (which already
+migrated in V009) and the course rule "camelCase JSON and UUID ids".
+
+Development seed: `V008` values are translated to deterministic UUIDs
+so the seed remains reproducible across environments:
+
+| Old bigint | New UUID |
+|---|---|
+| `9001` (appointment) | `00000000-0000-0000-0000-000000009001` |
+| `1001` (patient) | `00000000-0000-0000-0000-000000001001` |
+| `5001` (professional) | `00000000-0000-0000-0000-000000005001` |
+
+`professional_id = 5001` uses the same deterministic UUID as
+`appointment-scheduling-db`, so the seed stays consistent across
+repositories.
+
+Rollback: `U011` and `U012` only document that the type reversal is
+not symmetric. `V012` uses `md5(<col>::text)::uuid` so the parent-child
+relations between `consultations`, `attention_summaries` and
+`post_summaries` are preserved (the previous `gen_random_uuid()` per
+column broke them). See the comment inside the script.
 
 ## Related documentation
 
